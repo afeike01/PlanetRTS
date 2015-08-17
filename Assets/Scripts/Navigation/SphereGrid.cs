@@ -122,7 +122,7 @@ public class SphereGrid : MonoBehaviour
         newPoint += newPoint * total;
         return newPoint;
     }
-    public Grid RawSphereCoordinateToGrid(Vector3 sphereCoordinate)
+    public Grid GetGridFromLocation(Vector3 sphereCoordinate)
     {
         sphereCoordinate *= .01f;
         
@@ -166,14 +166,12 @@ public class SphereGrid : MonoBehaviour
             {
                 //top face
                 position.y = 1.0f;
-                //return position;
                 return gridDictionary[Orientation.Top];
             }
             else
             {
                 //bottom face
                 position.y = -1.0f;
-                //return position;
                 return gridDictionary[Orientation.Bottom];
             }
         }
@@ -203,14 +201,12 @@ public class SphereGrid : MonoBehaviour
             {
                 //right face
                 position.x = 1.0f;
-                //return position;
                 return gridDictionary[Orientation.Right];
             }
             else
             {
                 //left face
                 position.x = -1.0f;
-                //return position;
                 return gridDictionary[Orientation.Left];
             }
         }
@@ -240,14 +236,12 @@ public class SphereGrid : MonoBehaviour
             {
                 //front face
                 position.z = 1.0f;
-                //return position;
                 return gridDictionary[Orientation.Back];
             }
             else
             {
                 //back face
                 position.z = -1.0f;
-                //return position;
                 return gridDictionary[Orientation.Front];
             }
         }
@@ -347,7 +341,7 @@ public class SphereGrid : MonoBehaviour
     }
     public Node GetClosestNode(Vector3 newLocation, bool onlyAvailableNodes = false)
     {
-        Grid newGrid = RawSphereCoordinateToGrid(newLocation);//GetGridFrontLocationOnSphere(newLocation);
+        Grid newGrid = GetGridFromLocation(newLocation);//GetGridFrontLocationOnSphere(newLocation);
         NodeCluster newCluster = GetNodeClusterFromGridAndLocation(newLocation, newGrid);
         Node newNode = GetNodeFromNodeClusterAndLocation(newLocation, newCluster, onlyAvailableNodes);
         return newNode;

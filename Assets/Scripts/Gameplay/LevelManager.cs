@@ -19,20 +19,25 @@ public class PathQueueMember
 }
 public class LevelManager : MonoBehaviour 
 {
+    private bool gameOver = false;
     public static Vector3 PLANET_CENTER = new Vector3(0, 0, 0);
     public SphereGrid mainGrid;
 
-    public PlayerController player01;
-    public AIController player02;
+    public Controller player01;
+    public Controller player02;
 
-    public Text selectedUnitsText;
-    public Text activeUnitsText;
+    public Text mainText;
+    public Text p1BaseHealthText;
+    public Text p2BaseHealthText;
+    private Health p1BaseHealth;
+    private Health p2BaseHealth;
 
     private const int PATHS_PER_FRAME = 5;
     private List<PathQueueMember> pendingPathRequests = new List<PathQueueMember>();
 
-    public GameObject tempBuildingPrefab;
-    
+    public GameObject basePrefab;
+    public GameObject shieldPrefab;
+
 	// Use this for initialization
 	void Start () 
     {
@@ -41,35 +46,54 @@ public class LevelManager : MonoBehaviour
 	}
     void Update()
     {
-        //activeUnitsText.text = "Active : " + player01.activeUnits.Count;
-        //selectedUnitsText.text = "Selected : " + player01.selectedUnits.Count;
+        if (p1BaseHealth && p2BaseHealth&&!gameOver)
+        {
+            p1BaseHealthText.text = ("P1 Base : " + p1BaseHealth.currentHealth.ToString() + "/" + p1BaseHealth.maxHealth.ToString());
+            p2BaseHealthText.text = ("P2 Base : " + p2BaseHealth.currentHealth.ToString() + "/" + p2BaseHealth.maxHealth.ToString());
+        }
         GetPaths();
     }
     private void Initialize()
     {
-        BeginLevel();
+
+        //BeginLevel();
     }
     private void BeginLevel()
     {
         //Create Player Base
         Node newNode = mainGrid.gridDictionary[Orientation.Front].LookUpNode(25, 25);
         NodeCluster newCluster = newNode.clusterParent;
-        SpawnBuilding(newCluster);
+        Building p1Base = SpawnBuilding(newCluster, BuildingType.Base);
+        p1Base.Initialize(player01, BuildingType.Base);
+        p1BaseHealth = p1Base.gameObject.GetComponent<Health>();
         player01.Initialize(newNode);
 
         //Create Enemy Base
         newNode = mainGrid.gridDictionary[Orientation.Back].LookUpNode(25, 25);
         newCluster = newNode.clusterParent;
-        SpawnBuilding(newCluster);
+        Building p2Base = SpawnBuilding(newCluster, BuildingType.Base);
+        p2Base.Initialize(player02, BuildingType.Base);
+        p2BaseHealth = p2Base.gameObject.GetComponent<Health>();
         player02.Initialize(newNode);
 
     }
-    private void EndLevel()
+    public void EndLevel(Controller losingController)
     {
-        Debug.Log("Level Complete");
+        gameOver = true;
+        p1BaseHealthText.text = string.Empty;
+        p2BaseHealthText.text = string.Empty;
+        Controller winningController = losingController == player01 ? player02 : player01;
+        mainText.text = (winningController.gameObject.ToString() + " has won.");
+        while (losingController.activeUnits.Count > 0)
+        {
+            losingController.activeUnits[0].Deactivate();
+        }
     }
-    
-    public void SpawnBuilding(NodeCluster newCluster)
+    public bool IsGameOver()
+    {
+        return gameOver;
+    }
+    public Building SpawnBuilding(NodeCluster newCluster, BuildingType type)
     {
 
         Node newNode = newCluster.centerNode;
@@ -83,9 +107,13 @@ public class LevelManager : MonoBehaviour
                 newCluster.RefreshPaths();
             }
         }
-        Vector3 lookVector = (mainGrid.gameObject.transform.position - newNode.sphereCoordinates);
-        Quaternion lookRotation = Quaternion.LookRotation(lookVector);
-        GameObject newBuildingPrefab = Instantiate(tempBuildingPrefab, newNode.sphereCoordinates, lookRotation) as GameObject;
+        
+        GameObject buildingPrefab = (type == BuildingType.Base) ? basePrefab : shieldPrefab;
+        GameObject newBuildingPrefab = Instantiate(buildingPrefab, newNode.sphereCoordinates, Quaternion.identity) as GameObject;
+        Vector3 lookVector = (newNode.GetLocation()-PLANET_CENTER);
+        newBuildingPrefab.transform.up = lookVector;
+        Building buildingComponent = newBuildingPrefab.GetComponent<Building>();
+        return buildingComponent;
     }
     public void RequestPath(GridAgent newAgent, Node newStart, Node newEnd)
     {

@@ -10,42 +10,23 @@ public class GridAgent : MonoBehaviour
     public bool okToMove = true;
     public List<Node> agentPath=new List<Node>();
     public Node currentNode;
-    public Node lastNode;
+
     public SphereGrid mainGrid;
     public LevelManager manager;
 
     public float distFromNextNode;
 
-    public float switchNodeDist = .5f;
-    public float moveSwitchDist = 4f;
-    public float jumpSwitchDist = .25f;
-    public float resetPathDist = 10f;
+    public float switchNodeDist = 1f;
 
     private Rigidbody rB;
 
-    public Vector3 currentVelocity;
-    public float currentMagnitude;
-    public bool isGrounded = true;
-
     private int navUpdateCounter;
     private int navUpdateTimer = 0;
-
-    private float maxAirTime = 2.5f;
-    private float minAirTime = 1.5f;
-
-    //private Testing gameManager;
-/*
-    public float distFromPlayer = 0;
-
-    private int waitTime = 100;
-    private int waitCounter = 0;
-    private float minDistFromPlayer = 5f;*/
 
     private GameObject planet;
     private bool useGravity = true;
     public float gravitationalAcceleration = 10000;
     
-
     private Node currentDestination;
     private Node targetDestination;
 
@@ -72,7 +53,7 @@ public class GridAgent : MonoBehaviour
         
         
     }
-    public void Initialize(SphereGrid newGrid, LevelManager newManager)
+    public void Initialize(SphereGrid newGrid, LevelManager newManager,Node newCurrent)
     {
         manager = newManager;
         rB = GetComponent<Rigidbody>();
@@ -80,6 +61,7 @@ public class GridAgent : MonoBehaviour
         navUpdateCounter = Random.Range(50, 150);
         SetNavigationGrid(newGrid);
         planet = newGrid.gameObject;
+        SetCurrentNode(newCurrent);
         //gameManager = newGameManager;
     }
     private void UpdateMovement()
@@ -105,12 +87,10 @@ public class GridAgent : MonoBehaviour
             currentNode = agentPath[0];
             distFromNextNode = Vector3.Distance(transform.position, currentNode.sphereCoordinates);
 
-            switchNodeDist = moveSwitchDist;
+            //switchNodeDist = moveSwitchDist;
 
             if (distFromNextNode < switchNodeDist)
             {
-                lastNode = agentPath[0];
-                
                 agentPath.RemoveAt(0);
                 //GridAgent has reached Destination
                 if (agentPath.Count < 1)
@@ -124,7 +104,6 @@ public class GridAgent : MonoBehaviour
             if (currentNode != null)
             {
 
-                Vector3 upVector = (planet.gameObject.transform.position - transform.position).normalized;
                 Vector3 forwardVector = (currentNode.sphereCoordinates - transform.position).normalized;
                 rB.rotation = OrientUnitToGround(forwardVector);
 
@@ -210,6 +189,7 @@ public class GridAgent : MonoBehaviour
         else
             return false;
     }
+    
     public void ToggleOkToMove(bool newVal)
     {
         okToMove = newVal;
@@ -223,10 +203,6 @@ public class GridAgent : MonoBehaviour
     {
         useGravity = newVal;
     }
-    private void ToggleIsGrounded(bool newVal)
-    {
-        isGrounded = newVal;
-    }
     public void SetTargetDestination(Node newNode)
     {
         targetDestination = newNode;
@@ -234,8 +210,8 @@ public class GridAgent : MonoBehaviour
     public void SetTrailMaterial()
     {
         Material[] newMaterialArray = new Material[1];
-                newMaterialArray[0] = redMat;
-                tRenderer.materials = newMaterialArray;
-                tRenderer.time = 1f;
+        newMaterialArray[0] = redMat;
+        tRenderer.materials = newMaterialArray;
+        tRenderer.time = 1f;
     }
 }

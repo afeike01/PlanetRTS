@@ -3,32 +3,36 @@ using System.Collections;
 
 public class PhysicsExplosion : MonoBehaviour 
 {
+    private Controller controller;
     public float explosionForce = 1000f;
     public float radius = 50f;
     public float lifeTime = 1f;
     public float damageAmount = 100f;
 	// Use this for initialization
-	void Start () 
+
+    public void Initialize(Controller newController)
     {
+        controller = newController;
         Invoke("DestroySelf", .25f);
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    }
     void OnTriggerEnter(Collider other)
     {
-        Rigidbody rb = other.gameObject.GetComponent<Rigidbody>();
-        Projectile projComponent = other.gameObject.GetComponent<Projectile>();
         Health healthComponent = other.gameObject.GetComponent<Health>();
-        if (rb&&!projComponent)
-        {
-            rb.AddExplosionForce(explosionForce,transform.position,radius);
-        }
+        Rigidbody rb = other.gameObject.GetComponent<Rigidbody>();
+        
         if (healthComponent)
         {
-            healthComponent.ManageHealth(damageAmount);
+            if (rb)
+            {
+                rb.AddExplosionForce(explosionForce, transform.position, radius);
+            }
+            Unit unitComponent = other.gameObject.GetComponent<Unit>();
+            Building buildingComponent = other.gameObject.GetComponent<Building>();
+            if ((unitComponent && unitComponent.GetController() != controller) || (buildingComponent && buildingComponent.GetController() != controller))
+            {
+                healthComponent.ManageHealth(damageAmount);
+            }   
+            
         }
             
     }

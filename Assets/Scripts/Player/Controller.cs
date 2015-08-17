@@ -11,7 +11,7 @@ public class Controller : MonoBehaviour
     public List<Unit> activeUnits = new List<Unit>();
     public List<Unit> selectedUnits = new List<Unit>();
 
-    private Node controllerBaseLocation;
+    public Node controllerBaseLocation;
 
     public GameObject agentPrefab;
     private Node spawnNode;
@@ -25,10 +25,28 @@ public class Controller : MonoBehaviour
 
     public bool initialized = false;
 
+    private int numUnitsToSpawn = 10;
+    private Node destination;
+    private int commandUnitsTime = 400;
+    private int commandUnitsTimer = 0;
+
+    private Controller enemyController;
     public virtual void Initialize(Node newNode)
     {
         initialized = true;
         controllerBaseLocation = newNode;
+        enemyController = mainLevelManager.player01 == this ? mainLevelManager.player02 : mainLevelManager.player01;
+    }
+    void Update()
+    {
+        if (mainLevelManager.IsGameOver())
+            return;
+
+        CheckCommandUnits();
+        if (initialized)
+        {
+            CheckSpawnQueue();
+        }
     }
     public virtual bool ManageSelectedUnits(Unit newUnit, bool add = true)
     {
@@ -115,7 +133,7 @@ public class Controller : MonoBehaviour
             GameObject newAgentPrefab = Instantiate(agentPrefab, spawnLocation, agentPrefab.transform.rotation) as GameObject;
             newAgentPrefab.transform.up = upVector;
             GridAgent newAgent = newAgentPrefab.GetComponent<GridAgent>();
-            newAgent.Initialize(mainGrid, mainLevelManager);
+            newAgent.Initialize(mainGrid, mainLevelManager,newNode);
             Unit newUnit = newAgentPrefab.GetComponent<Unit>();
             newUnit.Initialize(newController);
 
@@ -165,5 +183,89 @@ public class Controller : MonoBehaviour
         {
             spawnQueue.RemoveAt(0);
         }
+    }
+    public virtual void BaseDestroyed()
+    {
+        mainLevelManager.EndLevel(this);
+    }
+    private void CheckCommandUnits()
+    {
+        if (commandUnitsTimer > commandUnitsTime)
+        {
+            CommandUnits();
+            commandUnitsTimer = 0;
+        }
+        commandUnitsTimer++;
+    }
+    private void CommandUnits()
+    {
+        bool underAttack = false;
+        Node attackLocation = null;
+        for (int i = 0; i < enemyController.activeUnits.Count; i++)
+        {
+            Unit enemyUnit = enemyController.activeUnits[i];
+            if (mainGrid.GetGridFromLocation(enemyUnit.transform.position) == controllerBaseLocation.gridParent)
+            {
+                underAttack = true;
+                attackLocation = mainGrid.GetClosestNode(enemyUnit.transform.position, true);
+                break;
+            }
+        }
+        if (!underAttack)
+        {
+            if (activeUnits.Count < enemyController.activeUnits.Count||activeUnits.Count==0)
+            {
+                //Create Units
+                for (int i = 0; i < numUnitsToSpawn; i++)
+                {
+                    ManageSpawnQueue(true);
+                }
+            }
+            else
+            {
+                //Move Units
+                //Units at Base
+                Orientation[] orientations = { Orientation.Top, Orientation.Right, Orientation.Left, Orientation.Bottom };
+                int index = Random.Range(0, orientations.Length);
+                int xVal = Random.Range(0, SphereGrid.GRID_SIZE-1);
+                int zVal = Random.Range(0, SphereGrid.GRID_SIZE-1);
+                destination = mainGrid.gridDictionary[orientations[index]].LookUpNode(xVal,zVal);
+                for (int i = 0; i < activeUnits.Count; i++)
+                {
+
+                    if (mainGrid.GetGridFromLocation(activeUnits[i].transform.position) == controllerBaseLocation.gridParent)
+                        selectedUnits.Add(activeUnits[i]);
+                }
+                GiveUnitsDestination(destination);
+
+                Node enemyBaseLocation = enemyController.controllerBaseLocation;
+                destination = mainGrid.GetClosestNode(enemyBaseLocation.GetLocation(), true);
+                for (int i = 0; i < activeUnits.Count; i++)
+                {
+
+                    if (mainGrid.GetGridFromLocation(activeUnits[i].transform.position) != controllerBaseLocation.gridParent)
+                        selectedUnits.Add(activeUnits[i]);
+                }
+                GiveUnitsDestination(destination);
+            }
+        }
+        else
+        {
+            //Under Attack
+            //Create Units
+            for (int i = 0; i < numUnitsToSpawn; i++)
+            {
+                ManageSpawnQueue(true);
+            }
+            //Bring Units back to Base
+            destination = attackLocation;
+            for (int i = 0; i < activeUnits.Count; i++)
+            {
+                selectedUnits.Add(activeUnits[i]);
+            }
+            GiveUnitsDestination(destination);
+        }
+
+
     }
 }

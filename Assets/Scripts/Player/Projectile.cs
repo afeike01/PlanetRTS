@@ -3,6 +3,7 @@ using System.Collections;
 
 public class Projectile : MonoBehaviour 
 {
+    private Controller controller;
     private Vector3 planetLocation = new Vector3(0, 0, 0);
     private float gravitationalAcceleration = 9000f;
     private bool useGravity = false;
@@ -13,8 +14,13 @@ public class Projectile : MonoBehaviour
     private float minDistFromCenter = 10f;
     private float maxDistFromCenter = 30f;
 
-    public void Initialize(Vector3 newVelocity)
+    public void Initialize(Controller newController, Vector3 newVelocity, Material newMaterial)
     {
+        controller = newController;
+        Material[] newMaterialArray = new Material[1];
+        newMaterialArray[0] = newMaterial;
+        GetComponent<TrailRenderer>().materials = newMaterialArray;
+
         rb = GetComponent<Rigidbody>();
         useGravity = true;
         rb.AddForce(newVelocity, ForceMode.VelocityChange);
@@ -45,6 +51,8 @@ public class Projectile : MonoBehaviour
         if (!newProjectile)
         {
             GameObject newExplosion = Instantiate(explosionPrefab, transform.position, transform.rotation) as GameObject;
+            PhysicsExplosion explosionComponent = newExplosion.GetComponent<PhysicsExplosion>();
+            explosionComponent.Initialize(this.controller);
             Destroy(this.gameObject);
         }
     }

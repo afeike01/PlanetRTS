@@ -3,11 +3,14 @@ using System.Collections;
 
 public class PlanetGravity : MonoBehaviour 
 {
+
     public GameObject planet;
-    public float gravitationalAcceleration = 6f;
+    public float gravitationalAcceleration = 9000f;
+    private Rigidbody rb;
 	// Use this for initialization
-	void Start () {
-	
+	void Start () 
+    {
+        rb = GetComponent<Rigidbody>();
 	}
 	
 	// Update is called once per frame
@@ -20,9 +23,8 @@ public class PlanetGravity : MonoBehaviour
         float magSqr = offset.sqrMagnitude;
         if (magSqr > 0.0001f)
         {
-            Rigidbody rb = GetComponent<Rigidbody>();
+
             rb.AddForce((gravitationalAcceleration * offset.normalized / magSqr) * rb.mass);
         }
-        //GetComponent<Rigidbody>().velocity += gravitationalAcceleration * Time.fixedTime * (planet.transform.position - transform.position);
     }
 }

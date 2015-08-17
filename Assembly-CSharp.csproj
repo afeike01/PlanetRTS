@@ -46,9 +46,11 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
-     <Compile Include="Assets\Scripts\AI\Health.cs" />
-     <Compile Include="Assets\Scripts\AI\Unit.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Building.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Health.cs" />
      <Compile Include="Assets\Scripts\Gameplay\LevelManager.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\Unit.cs" />
+     <Compile Include="Assets\Scripts\Gameplay\UnitDetection.cs" />
      <Compile Include="Assets\Scripts\Misc\DestroySelf.cs" />
      <Compile Include="Assets\Scripts\Misc\ObjExporter.cs" />
      <Compile Include="Assets\Scripts\Misc\PlanetGravity.cs" />
@@ -65,6 +67,7 @@
      <Compile Include="Assets\Scripts\Player\Controller.cs" />
      <Compile Include="Assets\Scripts\Player\PhysicsExplosion.cs" />
      <Compile Include="Assets\Scripts\Player\PlayerController.cs" />
+     <Compile Include="Assets\Scripts\Player\PlayerShip.cs" />
      <Compile Include="Assets\Scripts\Player\Projectile.cs" />
      <Compile Include="Assets\Scripts\Procedural\MeshBuilder.cs" />
      <Compile Include="Assets\Scripts\Procedural\MeshGenerator.cs" />

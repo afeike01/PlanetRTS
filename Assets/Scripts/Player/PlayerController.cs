@@ -12,13 +12,101 @@ public class PlayerController : Controller
     public GameObject placingBuilding;
     public GameObject placingBuildingPrefab;
 
+    private int numUnitsToSpawn = 10;
+    private Node destination;
+    private int commandUnitsTime = 400;
+    private int commandUnitsTimer = 0;
+
 	void Update () 
     {
+        if (mainLevelManager.IsGameOver())
+            return;
+
         SetTargetPoint();
         HandleInput();
         CheckSpawnQueue();
+
+        //Temporary
+        CheckCommandUnits();
 	}
-    
+    private void CheckCommandUnits()
+    {
+        if (commandUnitsTimer > commandUnitsTime)
+        {
+            CommandUnits();
+            commandUnitsTimer = 0;
+        }
+        commandUnitsTimer++;
+    }
+    private void CommandUnits()
+    {
+        bool underAttack = false;
+        Node attackLocation = null;
+        for (int i = 0; i < mainLevelManager.player02.activeUnits.Count; i++)
+        {
+            Unit p2Unit = mainLevelManager.player02.activeUnits[i];
+            if (mainGrid.GetGridFromLocation(p2Unit.transform.position) == controllerBaseLocation.gridParent)
+            {
+                underAttack = true;
+                attackLocation = mainGrid.GetClosestNode(p2Unit.transform.position, true);
+                break;
+            }
+        }
+        if (!underAttack)
+        {
+            if (activeUnits.Count <= mainLevelManager.player02.activeUnits.Count)
+            {
+                //Create Units
+                for (int i = 0; i < numUnitsToSpawn; i++)
+                {
+                    ManageSpawnQueue(true);
+                }
+            }
+            else
+            {
+                //Move Units
+                //Units at Base
+                Orientation[] orientations = { Orientation.Top, Orientation.Right, Orientation.Left, Orientation.Bottom };
+                int index = Random.Range(0, orientations.Length);
+                destination = mainGrid.gridDictionary[orientations[index]].LookUpNode(25, 25);
+                for (int i = 0; i < activeUnits.Count; i++)
+                {
+
+                    if (mainGrid.GetGridFromLocation(activeUnits[i].transform.position) == controllerBaseLocation.gridParent)
+                        selectedUnits.Add(activeUnits[i]);
+                }
+                GiveUnitsDestination(destination);
+
+                Node otherPlayerBaseLocation = mainLevelManager.player02.controllerBaseLocation;
+                destination = mainGrid.GetClosestNode(otherPlayerBaseLocation.GetLocation(), true);
+                for (int i = 0; i < activeUnits.Count; i++)
+                {
+
+                    if (mainGrid.GetGridFromLocation(activeUnits[i].transform.position) != controllerBaseLocation.gridParent)
+                        selectedUnits.Add(activeUnits[i]);
+                }
+                GiveUnitsDestination(destination);
+            }
+        }
+        else
+        {
+            //Under Attack
+            //Create Units
+            for (int i = 0; i < numUnitsToSpawn; i++)
+            {
+                ManageSpawnQueue(true);
+            }
+            //Bring Units back to Base
+            destination = attackLocation;
+            for (int i = 0; i < activeUnits.Count; i++)
+            {
+                selectedUnits.Add(activeUnits[i]);
+            }
+            GiveUnitsDestination(destination);
+        }
+
+
+    }
     private void SetTargetPoint()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -72,11 +160,8 @@ public class PlayerController : Controller
             {
                 if (hit.collider.gameObject.GetComponent<MeshCollider>())
                 {
-                    Node newNode = mainGrid.GetClosestNode(hit.point);
-                    if (newNode.available)
-                    {
-                        GiveUnitsDestination(newNode);
-                    } 
+                    Node newNode = mainGrid.GetClosestNode(hit.point,true);
+                    GiveUnitsDestination(newNode);
                 }
             }
 
@@ -134,13 +219,13 @@ public class PlayerController : Controller
         if (newCluster.centerNode.available)
         {
             placingBuilding.transform.position = newCluster.centerNode.GetLocation();
-            Vector3 lookVector = mainGrid.gameObject.transform.position - targetPoint;
-            Quaternion lookRotation = Quaternion.LookRotation(lookVector);
-            placingBuilding.transform.rotation = lookRotation;
+            Vector3 upVector = targetPoint - LevelManager.PLANET_CENTER;
+            placingBuilding.transform.up = upVector;
 
             if (Input.GetMouseButtonDown(0))
             {
-                mainLevelManager.SpawnBuilding(newCluster);
+                Building newBuilding = mainLevelManager.SpawnBuilding(newCluster,BuildingType.Shield);
+                newBuilding.Initialize(this, BuildingType.Shield);
                 Destroy(placingBuilding);
                 placingBuilding = null;
             }
